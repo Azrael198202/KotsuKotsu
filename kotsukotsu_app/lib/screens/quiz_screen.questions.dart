@@ -47,6 +47,36 @@ extension _QuizScreenQuestions on _QuizScreenState {
     );
   }
 
+  Widget _buildFractionAnswer(Question question, int index, {required String hint}) {
+    final tex = _fractionTex(question.raw);
+    final fieldIndex = _questionFields[index].quotientIndex;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Math.tex(
+            tex,
+            textStyle: const TextStyle(fontSize: 30, fontWeight: FontWeight.w600),
+          ),
+        ),
+        const SizedBox(width: 60),
+        const Text('=', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 140,
+          child: _buildAnswerField(
+            fieldIndex,
+            hint: hint,
+            keyboardType: TextInputType.number,
+            enabled: _started,
+          ),
+        ),
+        const SizedBox(width: 50),
+        const _ScratchPad(width: 200, height: 80),
+      ],
+    );
+  }
+
   Widget _buildInlineDivisionAnswer(Question question, int index) {
     final expression = _displayExpression(question.raw);
     final binding = _questionFields[index];
@@ -140,7 +170,7 @@ extension _QuizScreenQuestions on _QuizScreenState {
       case QuestionType.divideLong:
         return _buildLongDivision(question, index);
       case QuestionType.fraction:
-        return _buildInlineMathAnswer(question, index, hint: '分数の答え（例: 1/2）');
+        return _buildFractionAnswer(question, index, hint: 'Fraction (e.g. 1/2)');
       case QuestionType.ratio:
         return _buildInlineMathAnswer(question, index, hint: '比（例: 2:3）');
       case QuestionType.decimal:
@@ -364,4 +394,45 @@ extension _QuizScreenQuestions on _QuizScreenState {
     )..layout();
     return painter.height;
   }
+  String _fractionTex(String raw) {
+    final cleaned = _displayExpression(raw)
+        .replaceAll('x', '*')
+        .replaceAll('X', '*')
+        .replaceAll('?', '/');
+
+    final fourMatch =
+        RegExp(r'^(\d+)\s*/\s*(\d+)\s*([+\-*/])\s*(\d+)\s*/\s*(\d+)\s*$')
+            .firstMatch(cleaned);
+    if (fourMatch != null) {
+      final a = fourMatch.group(1)!;
+      final b = fourMatch.group(2)!;
+      final op = fourMatch.group(3)!;
+      final c = fourMatch.group(4)!;
+      final d = fourMatch.group(5)!;
+      final opTex = _opToTex(op);
+      return r'\frac{' + a + '}{' + b + '}' + opTex + r'\frac{' + c + '}{' + d + '}';
+    }
+
+    final expr = cleaned
+        .replaceAllMapped(RegExp(r'(\d+)\s*/\s*(\d+)'),
+            (m) => r'\frac{' + m.group(1)! + '}{' + m.group(2)! + '}')
+        .replaceAll('*', r'\times ');
+    return expr;
+  }
+
+  String _opToTex(String op) {
+    switch (op) {
+      case '+':
+        return ' + ';
+      case '-':
+        return ' - ';
+      case '*':
+        return r' \times ';
+      case '/':
+        return r' \div ';
+      default:
+        return ' $op ';
+    }
+  }
+
 }
