@@ -10,13 +10,13 @@
     "word": { "name": "文章題", "passScore": 4, "timeLimitSeconds": 420 }
   },
   "g3": {
-    "add_sub_column": { "name": "筆算（たし算・ひき算）", "passScore": 6, "timeLimitSeconds": 480 },
+    "add_sub_column": { "name": "筆算（たし算・ひき算）", "passScore": 3, "timeLimitSeconds": 480 },
     "mul_column": { "name": "筆算（かけ算）", "passScore": 6, "timeLimitSeconds": 480 },
     "div_column": { "name": "筆算（わり算・基礎）", "passScore": 5, "timeLimitSeconds": 540 },
     "word": { "name": "文章題", "passScore": 4, "timeLimitSeconds": 540 }
   },
   "g4": {
-    "mul_column": { "name": "筆算（かけ算）", "passScore": 6, "timeLimitSeconds": 540 },
+    "mul_column": { "name": "筆算（かけ算）", "passScore": 3, "timeLimitSeconds": 540 },
     "div_long": { "name": "筆算（わり算）", "passScore": 5, "timeLimitSeconds": 600 },
     "word": { "name": "文章題", "passScore": 4, "timeLimitSeconds": 600 }
   },

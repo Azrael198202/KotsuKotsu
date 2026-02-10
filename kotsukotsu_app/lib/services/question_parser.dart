@@ -8,6 +8,14 @@ class QuestionParser {
     String? sourceName,
   }) {
     var cleaned = raw.trim();
+    if (!cleaned.startsWith('[WORD]') && cleaned.contains('|')) {
+      cleaned = cleaned.split('|').first.trim();
+    }
+    cleaned = cleaned
+        .replaceAll('\uFF83\u30FB', 'x')
+        .replaceAll('\uFF83\uFF77', '/')
+        .replaceAll('\u00D7', 'x')
+        .replaceAll('\u00F7', '/');
     final type = _resolveType(cleaned, sourceName);
     String? expectedAnswer;
     if (type == QuestionType.word) {
@@ -52,8 +60,8 @@ class QuestionParser {
     if (raw.contains(':')) return QuestionType.ratio;
     if (_hasFraction(raw)) return QuestionType.fraction;
     if (raw.contains('.')) return QuestionType.decimal;
-    if (raw.contains('��') || raw.contains('/')) return QuestionType.divide;
-    if (raw.contains('�~') || raw.contains('*')) return QuestionType.multiply;
+    if (raw.contains('/')) return QuestionType.divide;
+    if (raw.contains('x') || raw.contains('*')) return QuestionType.multiply;
     if (raw.contains('+') || raw.contains('-')) return QuestionType.addSub;
     return QuestionType.unknown;
   }
@@ -68,7 +76,7 @@ class QuestionParser {
       return null;
     }
 
-    final normalized = raw.replaceAll('�~', '*').replaceAll('��', '/');
+    final normalized = raw.replaceAll('x', '*');
     if (type == QuestionType.fraction) {
       return _solveFraction(normalized);
     }

@@ -26,6 +26,7 @@ class _QuizScreenState extends State<QuizScreen> {
   final _bankLoader = QuestionBankLoader();
   final _controllers = <TextEditingController>[];
   final _focusNodes = <FocusNode>[];
+  final _questionFields = <_AnswerFieldBinding>[];
   final ScrollController _scrollController = ScrollController();
   final _stopwatch = Stopwatch();
   Timer? _timer;
@@ -87,7 +88,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 ),
               );
             }
-            _ensureControllers(data.questions.length);
+            _ensureControllers(data.questions);
             if (_started) {
               _startTimerIfNeeded();
             }
@@ -523,6 +524,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Widget _buildInlineMathAnswer(Question question, int index, {required String hint}) {
     final expression = _displayExpression(question.raw);
+    final fieldIndex = _questionFields[index].quotientIndex;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -533,7 +535,7 @@ class _QuizScreenState extends State<QuizScreen> {
         SizedBox(
           width: 140,
           child: _buildAnswerField(
-            index,
+            fieldIndex,
             hint: hint,
             keyboardType: TextInputType.number,
             enabled: _started,
@@ -545,8 +547,50 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
+  Widget _buildInlineDivisionAnswer(Question question, int index) {
+    final expression = _displayExpression(question.raw);
+    final binding = _questionFields[index];
+    final quotientIndex = binding.quotientIndex;
+    final remainderIndex = binding.remainderIndex ?? binding.quotientIndex;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(child: _MathPrompt(expression: expression)),
+        const SizedBox(width: 24),
+        const Text('=', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+        const SizedBox(width: 12),
+        const Text('Quot.', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 90,
+          child: _buildAnswerField(
+            quotientIndex,
+            hint: 'Quot.',
+            keyboardType: TextInputType.number,
+            enabled: _started,
+          ),
+        ),
+        const SizedBox(width: 16),
+        const Text('Rem.', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 90,
+          child: _buildAnswerField(
+            remainderIndex,
+            hint: 'Rem.',
+            keyboardType: TextInputType.number,
+            enabled: _started,
+          ),
+        ),
+        const SizedBox(width: 24),
+        const _ScratchPad(width: 200, height: 80),
+      ],
+    );
+  }
+
   Widget _buildWordQuestion(Question question, int index) {
     final text = question.raw.replaceFirst('[WORD]', '').trim();
+    final fieldIndex = _questionFields[index].quotientIndex;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -568,7 +612,7 @@ class _QuizScreenState extends State<QuizScreen> {
             SizedBox(
               width: 160,
               child: _buildAnswerField(
-                index,
+                fieldIndex,
                 hint: '答え',
                 keyboardType: TextInputType.number,
                 enabled: _started,
@@ -585,7 +629,7 @@ class _QuizScreenState extends State<QuizScreen> {
       case QuestionType.word:
         return _buildWordQuestion(question, index);
       case QuestionType.addSubColumn:
-        return _buildColumnQuestion(question, index, hint: '答え');
+        return _buildColumnQuestion(question, index, hint: 'Answer');
       case QuestionType.multiplyColumn:
         return _buildColumnQuestion(
           question,
@@ -602,7 +646,9 @@ class _QuizScreenState extends State<QuizScreen> {
       case QuestionType.decimal:
       case QuestionType.addSub:
       case QuestionType.multiply:
+        return _buildInlineMathAnswer(question, index, hint: '答え');
       case QuestionType.divide:
+        return _buildInlineDivisionAnswer(question, index);
       case QuestionType.unknown:
         return _buildInlineMathAnswer(question, index, hint: '答え');
     }
@@ -619,6 +665,7 @@ class _QuizScreenState extends State<QuizScreen> {
     final left = parsed?.left ?? '';
     final right = parsed?.right ?? '';
     final column = _renderColumn(left, right, op);
+    final fieldIndex = _questionFields[index].quotientIndex;
     const style = TextStyle(fontFamily: 'monospace', fontSize: 26, height: 1.2);
     final answerWidth = _columnAnswerWidth(column, style);
     return Row(
@@ -636,7 +683,7 @@ class _QuizScreenState extends State<QuizScreen> {
               const SizedBox(height: 2),
               SizedBox(
                 width: answerWidth,
-                child: _buildAnswerField(index, hint: hint, enabled: _started),
+                child: _buildAnswerField(fieldIndex, hint: hint, enabled: _started),
               ),
             ],
           ),
@@ -661,6 +708,7 @@ class _QuizScreenState extends State<QuizScreen> {
     final dividend = parsed?.left ?? '';
     final divisor = parsed?.right ?? '';
     final line = '${divisor.isEmpty ? '' : divisor} ) $dividend';
+    final fieldIndex = _questionFields[index].quotientIndex;
     const style = TextStyle(fontFamily: 'monospace', fontSize: 26, height: 1.2);
     final answerWidth = _columnAnswerWidth(line, style);
     return Row(
@@ -714,19 +762,47 @@ class _QuizScreenState extends State<QuizScreen> {
     return width.clamp(140, 260);
   }
 
+  String _normalizeIntInput(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return '';
+    final parsed = int.tryParse(trimmed);
+    return parsed?.toString() ?? trimmed;
+  }
+
+  _DivideParts? _parseDivideAnswer(String expected) {
+    final comma = RegExp(r'^\s*(-?\d+)\s*,\s*(-?\d+)\s*$');
+    final commaMatch = comma.firstMatch(expected);
+    if (commaMatch != null) {
+      return _DivideParts(
+        quotient: _normalizeIntInput(commaMatch.group(1) ?? ''),
+        remainder: _normalizeIntInput(commaMatch.group(2) ?? ''),
+      );
+    }
+    final rMatch = RegExp(r'^\s*(-?\d+)\s*(?:r\s*(-?\d+))?\s*$',
+            caseSensitive: false)
+        .firstMatch(expected);
+    if (rMatch != null) {
+      return _DivideParts(
+        quotient: _normalizeIntInput(rMatch.group(1) ?? ''),
+        remainder: _normalizeIntInput(rMatch.group(2) ?? '0'),
+      );
+    }
+    return null;
+  }
+
   Widget _buildAnswerField(
-    int index, {
+    int controllerIndex, {
     required String hint,
     TextInputType? keyboardType,
     bool enabled = true,
   }) {
     return TextField(
-      controller: _controllers[index],
-      focusNode: _focusNodes[index],
+      controller: _controllers[controllerIndex],
+      focusNode: _focusNodes[controllerIndex],
       keyboardType: _inputMode == InputMode.system ? keyboardType : TextInputType.none,
       readOnly: !enabled || _inputMode != InputMode.system,
       showCursor: enabled,
-      onTap: enabled ? () => _setActiveIndex(index) : null,
+      onTap: enabled ? () => _setActiveIndex(controllerIndex) : null,
       style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
       decoration: InputDecoration(
         filled: true,
@@ -746,7 +822,11 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   _BinaryExpression? _parseBinary(String raw) {
-    final normalized = raw.replaceAll('×', '*').replaceAll('÷', '/');
+    final normalized = raw
+        .replaceAll('\u00d7', '*')
+        .replaceAll('\u00f7', '/')
+        .replaceAll('x', '*')
+        .replaceAll('X', '*');
     final match = RegExp(
       r'^\s*(\d+(?:\.\d+)?)\s*([+\-*/])\s*(\d+(?:\.\d+)?)\s*=?\s*$',
     ).firstMatch(normalized);
@@ -765,16 +845,12 @@ class _QuizScreenState extends State<QuizScreen> {
     final width = (left.length > right.length ? left.length : right.length) + 2;
     final line1 = left.padLeft(width);
     final line2 = '$op ${right.padLeft(width - 2)}';
-    final line3 = ''.padLeft(width, '─');
+    final line3 = ''.padLeft(width, '-');
     return '$line1\n$line2\n$line3';
   }
 
   String _displayExpression(String raw) {
-    return raw
-        .replaceAll('*', '×')
-        .replaceAll('/', '÷')
-        .replaceAll('=', '')
-        .trim();
+    return raw.replaceAll('=', '').trim();
   }
 
   Future<_QuizData> _loadData(TaskArgs args) async {
@@ -796,20 +872,42 @@ class _QuizScreenState extends State<QuizScreen> {
     return _QuizData(config: config, questions: questions);
   }
 
-  void _ensureControllers(int count) {
-    if (_controllers.length == count) return;
+  void _ensureControllers(List<Question> questions) {
+    final expectedFieldCount = questions.fold<int>(
+      0,
+      (total, question) => total + (question.type == QuestionType.divide ? 2 : 1),
+    );
+    final needsRebuild =
+        _questionFields.length != questions.length || _controllers.length != expectedFieldCount;
+    if (!needsRebuild) return;
+
     for (final controller in _controllers) {
       controller.dispose();
     }
     for (final node in _focusNodes) {
       node.dispose();
     }
+
+    _questionFields.clear();
+    var fieldIndex = 0;
+    for (final question in questions) {
+      if (question.type == QuestionType.divide) {
+        _questionFields.add(
+          _AnswerFieldBinding(quotientIndex: fieldIndex, remainderIndex: fieldIndex + 1),
+        );
+        fieldIndex += 2;
+      } else {
+        _questionFields.add(_AnswerFieldBinding(quotientIndex: fieldIndex));
+        fieldIndex += 1;
+      }
+    }
+
     _controllers
       ..clear()
-      ..addAll(List.generate(count, (_) => TextEditingController()));
+      ..addAll(List.generate(fieldIndex, (_) => TextEditingController()));
     _focusNodes
       ..clear()
-      ..addAll(List.generate(count, (_) => FocusNode()));
+      ..addAll(List.generate(fieldIndex, (_) => FocusNode()));
     _activeIndex = 0;
   }
 
@@ -830,19 +928,60 @@ class _QuizScreenState extends State<QuizScreen> {
     var correct = 0;
     final reviews = <ReviewItem>[];
     for (var i = 0; i < data.questions.length; i++) {
-      final expected = data.questions[i].expectedAnswer;
-      final input = _controllers[i].text.trim();
-      if (expected != null && expected.isNotEmpty && input == expected) {
-        correct++;
+      final question = data.questions[i];
+      final expected = question.expectedAnswer;
+      final binding = _questionFields[i];
+
+      if (question.type == QuestionType.divide) {
+        final quotientInputRaw = _controllers[binding.quotientIndex].text.trim();
+        final remainderIndex = binding.remainderIndex ?? binding.quotientIndex;
+        final remainderInputRaw = _controllers[remainderIndex].text.trim();
+        final normalizedQuotientInput = _normalizeIntInput(quotientInputRaw);
+        final normalizedRemainderInput =
+            _normalizeIntInput(remainderInputRaw.isEmpty ? '0' : remainderInputRaw);
+        var isCorrect = false;
+        var expectedForReview = expected ?? '';
+        if (expected != null && expected.isNotEmpty) {
+          final parts = _parseDivideAnswer(expected);
+          if (parts != null) {
+            isCorrect = normalizedQuotientInput == parts.quotient &&
+                normalizedRemainderInput == parts.remainder;
+            expectedForReview = '${parts.quotient},${parts.remainder}';
+          } else {
+            isCorrect = normalizedQuotientInput == _normalizeIntInput(expected);
+          }
+        }
+        if (isCorrect) {
+          correct++;
+        }
+        final hasInput =
+            normalizedQuotientInput.isNotEmpty || normalizedRemainderInput.isNotEmpty;
+        final inputForReview = hasInput
+            ? '${normalizedQuotientInput.isEmpty ? '0' : normalizedQuotientInput},'
+                '${normalizedRemainderInput.isEmpty ? '0' : normalizedRemainderInput}'
+            : '';
+        reviews.add(
+          ReviewItem(
+            raw: question.raw,
+            type: question.type.name,
+            expected: expectedForReview,
+            input: inputForReview,
+          ),
+        );
+      } else {
+        final input = _controllers[binding.quotientIndex].text.trim();
+        if (expected != null && expected.isNotEmpty && input == expected) {
+          correct++;
+        }
+        reviews.add(
+          ReviewItem(
+            raw: question.raw,
+            type: question.type.name,
+            expected: expected ?? '',
+            input: input,
+          ),
+        );
       }
-      reviews.add(
-        ReviewItem(
-          raw: data.questions[i].raw,
-          type: data.questions[i].type.name,
-          expected: expected ?? '',
-          input: input,
-        ),
-      );
     }
     final effectivePassScore =
         data.config.passScore <= 0 ? data.questions.length : data.config.passScore;
@@ -993,13 +1132,11 @@ class _MathPrompt extends StatelessWidget {
     if (expression.isEmpty) {
       return const Text('式が読み取れません');
     }
-    final tex = expression
-        .replaceAll('×', r'\times ')
-        .replaceAll('÷', r'\div ')
-        .replaceAll('=', '');
-    return Math.tex(
-      tex,
-      textStyle: const TextStyle(fontSize: 30, fontWeight: FontWeight.w600),
+    return AutoSizeText(
+      expression,
+      maxLines: 1,
+      minFontSize: 18,
+      style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w600),
     );
   }
 }
@@ -1176,4 +1313,18 @@ class _BinaryExpression {
   final String left;
   final String op;
   final String right;
+}
+
+class _AnswerFieldBinding {
+  const _AnswerFieldBinding({required this.quotientIndex, this.remainderIndex});
+
+  final int quotientIndex;
+  final int? remainderIndex;
+}
+
+class _DivideParts {
+  const _DivideParts({required this.quotient, required this.remainder});
+
+  final String quotient;
+  final String remainder;
 }
