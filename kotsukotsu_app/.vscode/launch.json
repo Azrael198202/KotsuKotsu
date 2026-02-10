@@ -1,0 +1,26 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flutter (Debug)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "cwd": "e:\\pw\\KotsuKotsu\\kotsukotsu_app"
+    },
+    {
+      "name": "Flutter (Profile)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile",
+      "cwd": "e:\\pw\\KotsuKotsu\\kotsukotsu_app"
+    },
+    {
+      "name": "Flutter (Release)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "cwd": "e:\\pw\\KotsuKotsu\\kotsukotsu_app"
+    }
+  ]
+}

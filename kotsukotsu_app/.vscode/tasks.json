@@ -1,0 +1,37 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "flutter: pub get",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["pub", "get"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "flutter: clean",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["clean"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "flutter: run (debug)",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["run", "--debug"],
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "flutter: test",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["test"],
+      "group": "test",
+      "problemMatcher": []
+    }
+  ]
+}

@@ -34,6 +34,15 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  flutter_math_fork: ^0.7.4
+  flutter_drawing_board: ^1.0.1+2
+  math_keyboard: ^0.3.3
+  flutter_layout_grid: ^2.0.8
+  layout_grid: ^1.0.1
+  auto_size_text: ^3.0.0
+  isar: ^3.1.0+1
+  isar_flutter_libs: ^3.1.0+1
+  path_provider: ^2.1.4
 
 dev_dependencies:
   flutter_test:
@@ -45,6 +54,8 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  isar_generator: ^3.1.0+1
+  build_runner: ^2.4.12
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -57,7 +68,15 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
+    - assets/question_bank/g1/add_sub.txt
+    - assets/question_bank/g1/word.txt
+    - assets/assignments/rules.json
     - assets/question_bank/
+    - assets/question_bank/g2/
+    - assets/question_bank/g3/
+    - assets/question_bank/g4/
+    - assets/question_bank/g5/
+    - assets/question_bank/g6/
     - assets/assignments/
 
   # To add assets to your application, add an assets section, like this:

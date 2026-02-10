@@ -26,6 +26,7 @@ class ResultArgs {
     required this.durationSeconds,
     required this.passScore,
     required this.timeLimitSeconds,
+    required this.reviews,
   });
 
   final int grade;
@@ -36,7 +37,22 @@ class ResultArgs {
   final int durationSeconds;
   final int passScore;
   final int timeLimitSeconds;
+  final List<ReviewItem> reviews;
 
   bool get isPassed =>
       correct >= passScore && durationSeconds <= timeLimitSeconds;
+}
+
+class ReviewItem {
+  const ReviewItem({
+    required this.raw,
+    required this.type,
+    required this.expected,
+    required this.input,
+  });
+
+  final String raw;
+  final String type;
+  final String expected;
+  final String input;
 }

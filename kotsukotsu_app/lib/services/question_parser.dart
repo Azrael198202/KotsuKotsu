@@ -45,8 +45,8 @@ class QuestionParser {
     if (raw.contains(':')) return QuestionType.ratio;
     if (_hasFraction(raw)) return QuestionType.fraction;
     if (raw.contains('.')) return QuestionType.decimal;
-    if (raw.contains('÷') || raw.contains('/')) return QuestionType.divide;
-    if (raw.contains('×') || raw.contains('*')) return QuestionType.multiply;
+    if (raw.contains('��') || raw.contains('/')) return QuestionType.divide;
+    if (raw.contains('�~') || raw.contains('*')) return QuestionType.multiply;
     if (raw.contains('+') || raw.contains('-')) return QuestionType.addSub;
     return QuestionType.unknown;
   }
@@ -61,7 +61,7 @@ class QuestionParser {
       return null;
     }
 
-    final normalized = raw.replaceAll('×', '*').replaceAll('÷', '/');
+    final normalized = raw.replaceAll('�~', '*').replaceAll('��', '/');
     if (type == QuestionType.fraction) {
       return _solveFraction(normalized);
     }
@@ -69,7 +69,7 @@ class QuestionParser {
       return _solveRatio(normalized);
     }
 
-    final match = RegExp(r'^\\s*(-?\\d+(?:\\.\\d+)?)\\s*([+\\-*/])\\s*(-?\\d+(?:\\.\\d+)?)\\s*=?\\s*\$')
+    final match = RegExp(r'^\s*(-?\d+(?:\.\d+)?)\s*([+\-*/])\s*(-?\d+(?:\.\d+)?)\s*=?\s*$')
         .firstMatch(normalized);
     if (match == null) {
       return null;
@@ -99,7 +99,7 @@ class QuestionParser {
   }
 
   String _solveRatio(String normalized) {
-    final match = RegExp(r'^\\s*(\\d+)\\s*:\\s*(\\d+)\\s*\$').firstMatch(normalized);
+    final match = RegExp(r'^\s*(\d+)\s*:\s*(\d+)\s*$').firstMatch(normalized);
     if (match == null) return '';
     final left = int.parse(match.group(1)!);
     final right = int.parse(match.group(2)!);
@@ -109,7 +109,7 @@ class QuestionParser {
   }
 
   String _solveFraction(String normalized) {
-    final match = RegExp(r'^(\\d+)\\s*/\\s*(\\d+)\\s*([+\\-*/])\\s*(\\d+)\\s*/\\s*(\\d+)\\s*=?\\s*\$')
+    final match = RegExp(r'^(\d+)\s*/\s*(\d+)\s*([+\-*/])\s*(\d+)\s*/\s*(\d+)\s*=?\s*$')
         .firstMatch(normalized);
     if (match == null) {
       return '';

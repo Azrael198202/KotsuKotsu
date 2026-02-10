@@ -1,5 +1,4 @@
-import 'dart:convert';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../models/question.dart';
@@ -14,38 +13,80 @@ class QuestionBankLoader {
     required int grade,
     required String taskKey,
   }) async {
-    final manifestRaw = await rootBundle.loadString('AssetManifest.json');
-    final manifest = jsonDecode(manifestRaw) as Map<String, dynamic>;
+    debugPrint('Loading questions: grade=$grade, taskKey=$taskKey');
+    // Ensure logs show up even if debugPrint is throttled.
+    // ignore: avoid_print
+    print('Loading questions: grade=$grade, taskKey=$taskKey');
+    try {
+      final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+      final assets = manifest.listAssets();
+      // All assets in the bundle; if this is 0, assets are not packaged.
+      debugPrint('Total assets: ${assets.length}');
+      // ignore: avoid_print
+      print('Total assets: ${assets.length}');
 
-    final prefix = 'assets/question_bank/g$grade/';
-    final matches = manifest.keys
-        .where((path) => path.startsWith(prefix))
-        .where((path) => path.endsWith('.txt'))
-        .where((path) {
-          final fileName = path.split('/').last;
-          return fileName.startsWith(taskKey);
-        })
-        .toList()
-      ..sort();
+      final prefix = 'assets/question_bank/g$grade/';
+      // List all question bank txt files for this grade.
+      final allForGrade = assets
+          .where((path) => path.startsWith(prefix))
+          .where((path) => path.endsWith('.txt'))
+          .toList()
+        ..sort();
+      debugPrint('Asset prefix: $prefix');
+      // ignore: avoid_print
+      print('Asset prefix: $prefix');
+      debugPrint('All grade files (${allForGrade.length}): ${allForGrade.join(', ')}');
+      // ignore: avoid_print
+      print('All grade files (${allForGrade.length}): ${allForGrade.join(', ')}');
 
-    if (matches.isEmpty) {
-      final fallback = '$prefix$taskKey.txt';
-      if (manifest.containsKey(fallback)) {
-        matches.add(fallback);
+      final matches = assets
+          .where((path) => path.startsWith(prefix))
+          .where((path) => path.endsWith('.txt'))
+          .where((path) {
+            final fileName = path.split('/').last;
+            // Match by taskKey prefix, e.g. add_sub -> add_sub.txt / add_sub_02.txt.
+            return fileName.startsWith(taskKey);
+          })
+          .toList()
+        ..sort();
+      debugPrint('Matched files (${matches.length}): ${matches.join(', ')}');
+      // ignore: avoid_print
+      print('Matched files (${matches.length}): ${matches.join(', ')}');
+
+      if (matches.isEmpty) {
+        final fallback = '$prefix$taskKey.txt';
+        // If exact file exists, add it even if prefix matching failed.
+        if (assets.contains(fallback)) {
+          matches.add(fallback);
+        }
+        if (matches.isEmpty) {
+          // If still empty, report all available files for this grade.
+          debugPrint(
+            'No questions found for g$grade/$taskKey. Available: ${allForGrade.join(', ')}',
+          );
+          // ignore: avoid_print
+          print('No questions found for g$grade/$taskKey. Available: ${allForGrade.join(', ')}');
+        }
       }
-    }
 
-    final questions = <Question>[];
-    for (final path in matches) {
-      final raw = await rootBundle.loadString(path);
-      final lines = raw.split(RegExp(r'\\r?\\n')).where((line) => line.trim().isNotEmpty);
-      var index = 0;
-      for (final line in lines) {
-        final id = '${path.split('/').last}-$index';
-        questions.add(_parser.parse(id: id, raw: line, sourceName: path));
-        index++;
+      final questions = <Question>[];
+      for (final path in matches) {
+        final raw = await rootBundle.loadString(path);
+        final lines = raw.split(RegExp(r'\r?\n')).where((line) => line.trim().isNotEmpty);
+        var index = 0;
+        for (final line in lines) {
+          final id = '${path.split('/').last}-$index';
+          questions.add(_parser.parse(id: id, raw: line, sourceName: path));
+          index++;
+        }
       }
+      return questions;
+    } catch (e, s) {
+      // ignore: avoid_print
+      print('Failed to load AssetManifest: $e');
+      // ignore: avoid_print
+      print(s);
+      return const <Question>[];
     }
-    return questions;
   }
 }
