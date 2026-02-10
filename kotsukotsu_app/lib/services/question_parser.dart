@@ -8,8 +8,14 @@ class QuestionParser {
     String? sourceName,
   }) {
     var cleaned = raw.trim();
+    String? explicitAnswer;
     if (!cleaned.startsWith('[WORD]') && cleaned.contains('|')) {
-      cleaned = cleaned.split('|').first.trim();
+      final parts = cleaned.split('|');
+      cleaned = parts.first.trim();
+      explicitAnswer = parts.sublist(1).join('|').trim();
+      if (explicitAnswer.isEmpty) {
+        explicitAnswer = null;
+      }
     }
     cleaned = cleaned
         .replaceAll('\uFF83\u30FB', 'x')
@@ -23,7 +29,7 @@ class QuestionParser {
       cleaned = parsed.text;
       expectedAnswer = parsed.answer;
     } else {
-      expectedAnswer = _tryComputeAnswer(cleaned, type);
+      expectedAnswer = explicitAnswer ?? _tryComputeAnswer(cleaned, type);
     }
     return Question(id: id, raw: cleaned, type: type, expectedAnswer: expectedAnswer);
   }
