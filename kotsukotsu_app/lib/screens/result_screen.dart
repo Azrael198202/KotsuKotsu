@@ -113,7 +113,8 @@ class _ReviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final expected = item.expected;
     final input = item.input;
-    final isCorrect = expected.isNotEmpty && input == expected;
+    final hasExpected = expected.isNotEmpty;
+    final isCorrect = hasExpected && input == expected;
     return InkWell(
       onTap: onToggle,
       borderRadius: BorderRadius.circular(16),
@@ -148,23 +149,21 @@ class _ReviewCard extends StatelessWidget {
                   value: input.isEmpty ? ' ' : input,
                   strike: expected.isNotEmpty && !isCorrect,
                 ),
-                if (!isCorrect && expected.isNotEmpty) ...[
-                  const SizedBox(width: 16),
-                  FilledButton.tonal(
-                    onPressed: onToggle,
-                    child: Text(showAnswer ? '正解を隠す' : '正解を見る'),
-                  ),
-                  if (showAnswer) ...[
-                    const SizedBox(width: 12),
-                    Text(
-                      expected,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFFD32F2F),
-                      ),
+                const SizedBox(width: 16),
+                FilledButton.tonal(
+                  onPressed: onToggle,
+                  child: Text(showAnswer ? '正解を隠す' : '正解を見る'),
+                ),
+                if (showAnswer) ...[
+                  const SizedBox(width: 12),
+                  Text(
+                    hasExpected ? expected : '正解未設定',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: hasExpected ? const Color(0xFFD32F2F) : Colors.black54,
                     ),
-                  ],
+                  ),
                 ],
               ],
             ),

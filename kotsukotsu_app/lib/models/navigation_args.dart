@@ -40,7 +40,8 @@ class ResultArgs {
   final List<ReviewItem> reviews;
 
   bool get isPassed =>
-      correct >= passScore && durationSeconds <= timeLimitSeconds;
+      correct >= passScore &&
+      (timeLimitSeconds <= 0 || durationSeconds <= timeLimitSeconds);
 }
 
 class ReviewItem {

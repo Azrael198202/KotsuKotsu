@@ -7,9 +7,16 @@ class QuestionParser {
     required String raw,
     String? sourceName,
   }) {
-    final cleaned = raw.trim();
+    var cleaned = raw.trim();
     final type = _resolveType(cleaned, sourceName);
-    final expectedAnswer = _tryComputeAnswer(cleaned, type);
+    String? expectedAnswer;
+    if (type == QuestionType.word) {
+      final parsed = _parseWordWithAnswer(cleaned);
+      cleaned = parsed.text;
+      expectedAnswer = parsed.answer;
+    } else {
+      expectedAnswer = _tryComputeAnswer(cleaned, type);
+    }
     return Question(id: id, raw: cleaned, type: type, expectedAnswer: expectedAnswer);
   }
 
@@ -165,4 +172,21 @@ class QuestionParser {
     }
     return x;
   }
+
+  _WordParseResult _parseWordWithAnswer(String raw) {
+    if (!raw.contains('|')) {
+      return _WordParseResult(text: raw, answer: null);
+    }
+    final parts = raw.split('|');
+    final text = parts.first.trim();
+    final answer = parts.sublist(1).join('|').trim();
+    return _WordParseResult(text: text, answer: answer.isEmpty ? null : answer);
+  }
+}
+
+class _WordParseResult {
+  const _WordParseResult({required this.text, required this.answer});
+
+  final String text;
+  final String? answer;
 }

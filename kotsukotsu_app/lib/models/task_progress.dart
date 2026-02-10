@@ -18,7 +18,8 @@ class TaskProgressEntity {
   late DateTime updatedAt;
 
   bool get isPassed =>
-      correct >= passScore && durationSeconds <= timeLimitSeconds;
+      correct >= passScore &&
+      (timeLimitSeconds <= 0 || durationSeconds <= timeLimitSeconds);
 
   bool get isPerfect => total > 0 && correct == total;
 

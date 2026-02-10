@@ -37,6 +37,7 @@ class _QuizScreenState extends State<QuizScreen> {
   bool _started = false;
   bool _inputPanelCollapsed = true;
   Offset _floatingPanelOffset = const Offset(20, 120);
+  bool _floatingInitialized = false;
 
   @override
   void dispose() {
@@ -320,6 +321,10 @@ class _QuizScreenState extends State<QuizScreen> {
     final panelHeight = _inputPanelCollapsed ? 84.0 : 520.0;
     final maxX = (constraints.maxWidth - panelWidth).clamp(0.0, constraints.maxWidth);
     final maxY = (constraints.maxHeight - panelHeight).clamp(0.0, constraints.maxHeight);
+    if (!_floatingInitialized) {
+      _floatingPanelOffset = Offset(maxX, maxY / 2);
+      _floatingInitialized = true;
+    }
     final clamped = Offset(
       _floatingPanelOffset.dx.clamp(0.0, maxX),
       _floatingPanelOffset.dy.clamp(0.0, maxY),
@@ -616,17 +621,36 @@ class _QuizScreenState extends State<QuizScreen> {
     final column = _renderColumn(left, right, op);
     const style = TextStyle(fontFamily: 'monospace', fontSize: 26, height: 1.2);
     final answerWidth = _columnAnswerWidth(column, style);
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          column,
-          style: style,
+        Expanded(
+          flex: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                column,
+                style: style,
+              ),
+              const SizedBox(height: 2),
+              SizedBox(
+                width: answerWidth,
+                child: _buildAnswerField(index, hint: hint, enabled: _started),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 4),
-        SizedBox(
-          width: answerWidth,
-          child: _buildAnswerField(index, hint: hint, enabled: _started),
+        const SizedBox(width: 6),
+        Expanded(
+          flex: 3,
+          child: Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Transform.translate(
+              offset: const Offset(0, -6),
+              child: _ScratchPad(height: 200),
+            ),
+          ),
         ),
       ],
     );
@@ -639,17 +663,36 @@ class _QuizScreenState extends State<QuizScreen> {
     final line = '${divisor.isEmpty ? '' : divisor} ) $dividend';
     const style = TextStyle(fontFamily: 'monospace', fontSize: 26, height: 1.2);
     final answerWidth = _columnAnswerWidth(line, style);
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          line,
-          style: style,
+        Expanded(
+          flex: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                line,
+                style: style,
+              ),
+              const SizedBox(height: 2),
+              SizedBox(
+                width: answerWidth,
+                child: _buildAnswerField(index, hint: '商 r 余り（例: 12 r3）', enabled: _started),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 4),
-        SizedBox(
-          width: answerWidth,
-          child: _buildAnswerField(index, hint: '商 r 余り（例: 12 r3）', enabled: _started),
+        const SizedBox(width: 16),
+        Expanded(
+          flex: 3,
+          child: Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Transform.translate(
+              offset: const Offset(0, -6),
+              child: _ScratchPad(height: 200),
+            ),
+          ),
         ),
       ],
     );
@@ -801,6 +844,10 @@ class _QuizScreenState extends State<QuizScreen> {
         ),
       );
     }
+    final effectivePassScore =
+        data.config.passScore <= 0 ? data.questions.length : data.config.passScore;
+    final cappedPassScore =
+        effectivePassScore > data.questions.length ? data.questions.length : effectivePassScore;
     final result = ResultArgs(
       grade: args.grade,
       taskKey: args.taskKey,
@@ -808,7 +855,7 @@ class _QuizScreenState extends State<QuizScreen> {
       total: data.questions.length,
       correct: correct,
       durationSeconds: _elapsedSeconds,
-      passScore: data.config.passScore,
+      passScore: cappedPassScore,
       timeLimitSeconds: data.config.timeLimitSeconds,
       reviews: reviews,
     );
@@ -1006,10 +1053,10 @@ class _PaperLinePainter extends CustomPainter {
 }
 
 class _ScratchPad extends StatefulWidget {
-  const _ScratchPad({required this.width, required this.height});
+  const _ScratchPad({this.width, this.height});
 
-  final double width;
-  final double height;
+  final double? width;
+  final double? height;
 
   @override
   State<_ScratchPad> createState() => _ScratchPadState();
@@ -1025,8 +1072,8 @@ class _ScratchPadState extends State<_ScratchPad> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: widget.width,
-      height: widget.height,
+      width: widget.width ?? double.infinity,
+      height: widget.height ?? 120,
       decoration: BoxDecoration(
         color: const Color(0xFFF7FAFD),
         borderRadius: BorderRadius.circular(8),
