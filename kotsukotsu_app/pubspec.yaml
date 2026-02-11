@@ -68,15 +68,7 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
-    - assets/question_bank/g1/add_sub.txt
-    - assets/question_bank/g1/word.txt
-    - assets/assignments/rules.json
     - assets/question_bank/
-    - assets/question_bank/g2/
-    - assets/question_bank/g3/
-    - assets/question_bank/g4/
-    - assets/question_bank/g5/
-    - assets/question_bank/g6/
     - assets/assignments/
 
   # To add assets to your application, add an assets section, like this:

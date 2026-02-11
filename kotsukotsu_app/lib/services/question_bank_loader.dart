@@ -5,9 +5,25 @@ import '../models/question.dart';
 import 'question_parser.dart';
 
 class QuestionBankLoader {
-  QuestionBankLoader({QuestionParser? parser}) : _parser = parser ?? QuestionParser();
+  QuestionBankLoader({
+    QuestionParser? parser,
+    this.assetBasePath = 'assets/question_bank',
+    this.useGradeSubdirectory = true,
+  }) : _parser = parser ?? QuestionParser();
 
   final QuestionParser _parser;
+  final String assetBasePath;
+  final bool useGradeSubdirectory;
+
+  String _prefixForGrade(int grade) {
+    final base = assetBasePath.endsWith('/')
+        ? assetBasePath.substring(0, assetBasePath.length - 1)
+        : assetBasePath;
+    if (useGradeSubdirectory) {
+      return '$base/g$grade/';
+    }
+    return '$base/';
+  }
 
   Future<List<Question>> loadQuestions({
     required int grade,
@@ -25,7 +41,7 @@ class QuestionBankLoader {
       // ignore: avoid_print
       print('Total assets: ${assets.length}');
 
-      final prefix = 'assets/question_bank/g$grade/';
+      final prefix = _prefixForGrade(grade);
       // List all question bank txt files for this grade.
       final allForGrade = assets
           .where((path) => path.startsWith(prefix))
@@ -88,5 +104,28 @@ class QuestionBankLoader {
       print(s);
       return const <Question>[];
     }
+  }
+
+  Future<List<int>> availableGrades() async {
+    if (!useGradeSubdirectory) return const <int>[];
+    final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+    final assets = manifest.listAssets();
+    final base = assetBasePath.endsWith('/')
+        ? assetBasePath.substring(0, assetBasePath.length - 1)
+        : assetBasePath;
+    final prefix = '$base/';
+    final grades = <int>{};
+    final regex = RegExp('^${RegExp.escape(prefix)}g(\\d+)/');
+    for (final path in assets) {
+      if (!path.startsWith(prefix)) continue;
+      final match = regex.firstMatch(path);
+      if (match == null) continue;
+      final grade = int.tryParse(match.group(1) ?? '');
+      if (grade != null) {
+        grades.add(grade);
+      }
+    }
+    final sorted = grades.toList()..sort();
+    return sorted;
   }
 }

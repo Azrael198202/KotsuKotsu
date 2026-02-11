@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../config/app_engine_config.dart';
 import '../models/assignment_config.dart';
 import '../models/navigation_args.dart';
 import '../models/task_progress.dart';
@@ -17,7 +18,9 @@ class TaskSelectScreen extends StatefulWidget {
 }
 
 class _TaskSelectScreenState extends State<TaskSelectScreen> {
-  final _rulesLoader = AssignmentRulesLoader();
+  final _rulesLoader = AssignmentRulesLoader(
+    assetPath: appEngineConfig.assignmentRulesAssetPath,
+  );
 
   @override
   Widget build(BuildContext context) {

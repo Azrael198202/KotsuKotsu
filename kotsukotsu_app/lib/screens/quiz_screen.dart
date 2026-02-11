@@ -4,6 +4,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 
+import '../config/app_engine_config.dart';
 import '../models/assignment_config.dart';
 import '../models/navigation_args.dart';
 import '../models/question.dart';
@@ -28,8 +29,13 @@ class QuizScreen extends StatefulWidget {
 }
 
 class _QuizScreenState extends State<QuizScreen> {
-  final _rulesLoader = AssignmentRulesLoader();
-  final _bankLoader = QuestionBankLoader();
+  final _rulesLoader = AssignmentRulesLoader(
+    assetPath: appEngineConfig.assignmentRulesAssetPath,
+  );
+  final _bankLoader = QuestionBankLoader(
+    assetBasePath: appEngineConfig.questionBankBasePath,
+    useGradeSubdirectory: appEngineConfig.useGradeSubdirectory,
+  );
   final _controllers = <TextEditingController>[];
   final _focusNodes = <FocusNode>[];
   final _questionFields = <_AnswerFieldBinding>[];

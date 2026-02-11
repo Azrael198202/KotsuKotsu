@@ -5,7 +5,11 @@ import 'package:flutter/services.dart';
 import '../models/assignment_config.dart';
 
 class AssignmentRulesLoader {
-  static const String assetPath = 'assets/assignments/rules.json';
+  AssignmentRulesLoader({
+    this.assetPath = 'assets/assignments/rules.json',
+  });
+
+  final String assetPath;
 
   Future<List<AssignmentConfig>> loadConfigs() async {
     final raw = await rootBundle.loadString(assetPath);
