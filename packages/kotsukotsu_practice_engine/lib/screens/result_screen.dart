@@ -34,19 +34,19 @@ class _ResultScreenState extends State<ResultScreen> {
     final pass = args.isPassed;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('结果')),
+      appBar: AppBar(title: const Text('けっか')),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              pass ? '通过' : '未通过',
+              pass ? 'ごうかく' : 'もういちど',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 12),
-            Text('得分: ${args.correct}/${args.total}'),
-            Text('用时: ${args.durationSeconds}s / 限时: ${args.timeLimitSeconds}s'),
+            Text('てんすう: ${args.correct}/${args.total}'),
+            Text('じかん: ${args.durationSeconds}s / じげん: ${args.timeLimitSeconds}s'),
             const SizedBox(height: 16),
             Expanded(
               child: ListView.separated(
@@ -86,7 +86,7 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                   );
                 },
-                child: const Text('再做一次'),
+                child: const Text('もういちど'),
               ),
             const SizedBox(height: 12),
             OutlinedButton(
@@ -107,7 +107,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   arguments: GradeArgs(grade: grade),
                 );
               },
-              child: Text(navConfig.allowGradeSelection ? '选择年级' : '返回任务'),
+              child: Text(navConfig.allowGradeSelection ? 'かだい　せんたく' : 'かだい　せんたく'),
             ),
           ],
         ),
@@ -155,7 +155,7 @@ class _ReviewCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '第${index + 1}题',
+              'だい ${index + 1} ',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 10),
@@ -172,12 +172,12 @@ class _ReviewCard extends StatelessWidget {
                 const SizedBox(width: 16),
                 FilledButton.tonal(
                   onPressed: onToggle,
-                  child: Text(showAnswer ? '隐藏答案' : '显示答案'),
+                  child: Text(showAnswer ? 'こたえをかくす' : 'こたえをみる'),
                 ),
                 if (showAnswer) ...[
                   const SizedBox(width: 12),
                   Text(
-                    hasExpected ? expected : '无标准答案',
+                    hasExpected ? expected : 'いろいろな答えがあります',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,

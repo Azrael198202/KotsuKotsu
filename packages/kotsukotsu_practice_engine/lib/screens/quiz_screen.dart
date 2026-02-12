@@ -51,7 +51,7 @@ class _QuizScreenState extends State<QuizScreen> {
   InputMode _inputMode = InputMode.keypad;
   bool _inQuestionPhase = false;
   bool _started = false;
-  bool _inputPanelCollapsed = true;
+  bool _inputPanelCollapsed = false;
   Offset _floatingPanelOffset = const Offset(20, 120);
   bool _floatingInitialized = false;
   String? _pdfLoadError;
@@ -540,6 +540,7 @@ class _QuizScreenState extends State<QuizScreen> {
     if (_inQuestionPhase) return;
     setState(() {
       _inQuestionPhase = true;
+      _inputPanelCollapsed = false;
     });
   }
 

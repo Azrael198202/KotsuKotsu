@@ -40,6 +40,7 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
       _future = _loadData(args.grade);
       _statusFuture = MonetizationService.status();
     }
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       await AdPopupService.showLocalAdPopup(context);
@@ -59,7 +60,7 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
             Expanded(
               child: Center(
                 child: SizedBox(
-                  height: 102,
+                  height: 72,
                   child: Image.asset(
                     'assets/bg/title.png',
                     fit: BoxFit.contain,
@@ -130,7 +131,7 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
           }
           final data = snapshot.data;
           if (data == null || data.configs.isEmpty) {
-            return const Center(child: Text('かだい　データがみつかりません'));
+            return const Center(child: Text('かだいがみつかりません。'));
           }
 
           var prevPassed = true;
@@ -294,50 +295,178 @@ class _TaskTypeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = enabled ? const Color(0xFF2E7D32) : const Color(0xFFB0B7C3);
+    final bgGradient = enabled
+        ? const LinearGradient(
+            colors: [Color(0xFF76C95F), Color(0xFF59B64E)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )
+        : const LinearGradient(
+            colors: [Color(0xFFC4CAD3), Color(0xFFA9B0BC)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          );
+
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       child: Container(
-        height: 96,
+        height: 100,
         decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(16),
+          gradient: bgGradient,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x22000000),
+              blurRadius: 8,
+              offset: Offset(0, 3),
+            ),
+          ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      config.taskName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '時限 ${config.timeLimitSeconds}s',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+        child: Stack(
+          children: [
+            Positioned(
+              top: -12,
+              right: -10,
+              child: Opacity(
+                opacity: enabled ? 0.14 : 0.08,
+                child: const Icon(
+                  Icons.auto_awesome,
+                  size: 54,
+                  color: Colors.white,
                 ),
               ),
-              if (locked)
-                const Icon(Icons.lock, color: Colors.amberAccent, size: 26)
-              else if (enabled)
-                const Icon(Icons.chevron_right, color: Colors.white),
-              const SizedBox(width: 8),
-              _ScoreBadge(progress: progress),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.menu_book_rounded,
+                      size: 34,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          config.taskName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 27,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            height: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          progress == null
+                              ? 'かいとう　じかん やく ${(config.timeLimitSeconds / 60).ceil()} ふん'
+                              : 'せいせき ${progress!.scoreLabel} / じげん ${config.timeLimitSeconds}s',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  if (locked)
+                    const _LockBadge()
+                  else
+                    _StartActionButton(
+                      label: progress == null ? 'はじまる' : 'ふくしゅう',
+                      enabled: enabled,
+                      onTap: onTap,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StartActionButton extends StatelessWidget {
+  const _StartActionButton({
+    required this.label,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool enabled;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final gradient = enabled
+        ? const LinearGradient(
+            colors: [Color(0xFFFFB23E), Color(0xFFFF8A00)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          )
+        : const LinearGradient(
+            colors: [Color(0xFFE2E2E2), Color(0xFFCFCFCF)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          );
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(22),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            gradient: gradient,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: const Color(0xFFFFFFFF), width: 1.2),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x2A7A3F00),
+                blurRadius: 5,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
             ],
           ),
         ),
@@ -346,25 +475,31 @@ class _TaskTypeTile extends StatelessWidget {
   }
 }
 
-class _ScoreBadge extends StatelessWidget {
-  const _ScoreBadge({required this.progress});
-
-  final TaskProgressEntity? progress;
+class _LockBadge extends StatelessWidget {
+  const _LockBadge();
 
   @override
   Widget build(BuildContext context) {
-    if (progress == null) {
-      return const Text(
-        '--',
-        style: TextStyle(fontSize: 16, color: Colors.white),
-      );
-    }
-    return Text(
-      progress!.scoreLabel,
-      style: const TextStyle(
-        fontSize: 15,
-        fontWeight: FontWeight.w700,
-        color: Colors.white,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF2CF),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFFD675)),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.lock, color: Color(0xFFB17E00), size: 16),
+          SizedBox(width: 4),
+          Text(
+            '解鎖',
+            style: TextStyle(
+              color: Color(0xFFB17E00),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }
