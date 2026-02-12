@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-
-import 'app.dart';
+import 'package:kotsukotsu_practice_engine/kotsukotsu_practice_engine.dart';
 
 void main() {
-  runApp(const KotsuKotsuApp());
+  runApp(const KotsuKotsuPracticeApp());
 }

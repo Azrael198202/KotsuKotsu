@@ -1,0 +1,33 @@
+name: kotsukotsu_practice_engine
+description: Shared offline math practice engine for KotsuKotsu apps.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.10.7
+
+dependencies:
+  flutter:
+    sdk: flutter
+  auto_size_text: ^3.0.0
+  flutter_math_fork: ^0.7.4
+  syncfusion_flutter_pdfviewer: ^30.2.4
+  flutter_drawing_board: ^1.0.1+2
+  math_keyboard: ^0.3.3
+  flutter_layout_grid: ^2.0.8
+  layout_grid: ^1.0.1
+  isar: ^3.1.0+1
+  isar_flutter_libs: ^3.1.0+1
+  path_provider: ^2.1.4
+  shared_preferences: ^2.3.2
+  fl_chart: ^1.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  isar_generator: ^3.1.0+1
+  build_runner: ^2.4.12
+
+flutter:
+  uses-material-design: true

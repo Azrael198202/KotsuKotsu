@@ -1,0 +1,37 @@
+name: grade1_app
+description: "Grade 1 app using shared KotsuKotsu practice engine."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.7
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  kotsukotsu_practice_engine:
+    path: ../packages/kotsukotsu_practice_engine
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/bg/
+    - assets/question_bank/g1/
+    - assets/explanations/g1/
+    - assets/ads/
+    - assets/assignments/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/bg/icon.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/bg/icon.png"
+  remove_alpha_ios: true

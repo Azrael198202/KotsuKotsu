@@ -1,0 +1,35 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "KotsuKotsu App (Debug)",
+      "type": "dart",
+      "request": "launch",
+      "flutterMode": "debug",
+      "cwd": "${workspaceFolder}/kotsukotsu_app",
+      "preLaunchTask": "kotsukotsu: prepare"
+    },
+    {
+      "name": "Grade1 App (Debug)",
+      "type": "dart",
+      "request": "launch",
+      "flutterMode": "debug",
+      "cwd": "${workspaceFolder}/grade1_app",
+      "preLaunchTask": "grade1: prepare"
+    },
+    {
+      "name": "KotsuKotsu App (Debug, no build)",
+      "type": "dart",
+      "request": "launch",
+      "flutterMode": "debug",
+      "cwd": "${workspaceFolder}/kotsukotsu_app"
+    },
+    {
+      "name": "Grade1 App (Debug, no build)",
+      "type": "dart",
+      "request": "launch",
+      "flutterMode": "debug",
+      "cwd": "${workspaceFolder}/grade1_app"
+    }
+  ]
+}

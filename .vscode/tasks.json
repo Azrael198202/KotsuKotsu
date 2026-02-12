@@ -1,0 +1,116 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "kotsukotsu: clean",
+      "type": "shell",
+      "command": "flutter clean",
+      "options": {
+        "cwd": "${workspaceFolder}/kotsukotsu_app"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "kotsukotsu: pub get",
+      "type": "shell",
+      "command": "flutter pub get",
+      "options": {
+        "cwd": "${workspaceFolder}/kotsukotsu_app"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "kotsukotsu: build apk (debug)",
+      "type": "shell",
+      "command": "flutter build apk --debug",
+      "options": {
+        "cwd": "${workspaceFolder}/kotsukotsu_app"
+      },
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "kotsukotsu: prepare",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "kotsukotsu: clean",
+        "kotsukotsu: pub get",
+        "kotsukotsu: build apk (debug)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "grade1: clean",
+      "type": "shell",
+      "command": "flutter clean",
+      "options": {
+        "cwd": "${workspaceFolder}/grade1_app"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "grade1: pub get",
+      "type": "shell",
+      "command": "flutter pub get",
+      "options": {
+        "cwd": "${workspaceFolder}/grade1_app"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "grade1: build apk (debug)",
+      "type": "shell",
+      "command": "flutter build apk --debug",
+      "options": {
+        "cwd": "${workspaceFolder}/grade1_app"
+      },
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "grade1: prepare",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "grade1: clean",
+        "grade1: pub get",
+        "grade1: build apk (debug)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "all: clean",
+      "dependsOn": [
+        "kotsukotsu: clean",
+        "grade1: clean"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "all: pub get",
+      "dependsOn": [
+        "kotsukotsu: pub get",
+        "grade1: pub get"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "all: build apk (debug)",
+      "dependsOn": [
+        "kotsukotsu: build apk (debug)",
+        "grade1: build apk (debug)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "all: prepare",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "all: clean",
+        "all: pub get",
+        "all: build apk (debug)"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "g1": {
+    "add_sub": { "name": "たし算・ひき算", "passScore": 4, "timeLimitSeconds": 300 },
+    "word": { "name": "文章題", "passScore": 2, "timeLimitSeconds": 420 }
+  },
+  "g2": {
+    "add_sub": { "name": "たし算・ひき算（くり上がり/くり下がり）", "passScore": 8, "timeLimitSeconds": 420 },
+    "mul_basic": { "name": "かけ算九九", "passScore": 6, "timeLimitSeconds": 360 },
+    "div_basic": { "name": "わり算の基礎", "passScore": 6, "timeLimitSeconds": 360 },
+    "word": { "name": "文章題", "passScore": 4, "timeLimitSeconds": 420 }
+  },
+  "g3": {
+    "add_sub_column": { "name": "筆算（たし算・ひき算）", "passScore": 3, "timeLimitSeconds": 480 },
+    "mul_column": { "name": "筆算（かけ算）", "passScore": 6, "timeLimitSeconds": 480 },
+    "div_column": { "name": "筆算（わり算・基礎）", "passScore": 5, "timeLimitSeconds": 540 },
+    "word": { "name": "文章題", "passScore": 4, "timeLimitSeconds": 540 }
+  },
+  "g4": {
+    "mul_column": { "name": "筆算（かけ算）", "passScore": 3, "timeLimitSeconds": 540 },
+    "div_long": { "name": "筆算（わり算）", "passScore": 5, "timeLimitSeconds": 600 },
+    "word": { "name": "文章題", "passScore": 4, "timeLimitSeconds": 600 }
+  },
+  "g5": {
+    "decimals": { "name": "小数の四則", "passScore": 6, "timeLimitSeconds": 600 },
+    "div_long": { "name": "筆算（小数のわり算）", "passScore": 5, "timeLimitSeconds": 660 },
+    "word": { "name": "文章題", "passScore": 4, "timeLimitSeconds": 660 }
+  },
+  "g6": {
+    "fractions": { "name": "分数の四則", "passScore": 6, "timeLimitSeconds": 660 },
+    "ratio": { "name": "比と比例", "passScore": 5, "timeLimitSeconds": 660 },
+    "word": { "name": "文章題", "passScore": 4, "timeLimitSeconds": 720 }
+  }
+}
