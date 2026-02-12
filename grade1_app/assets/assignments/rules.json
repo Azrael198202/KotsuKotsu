@@ -1,6 +1,7 @@
 {
   "g1": {
-    "add_sub": { "name": "たし算・ひき算", "passScore": 4, "timeLimitSeconds": 300 },
+    "add": { "name": "たし算", "passScore": 4, "timeLimitSeconds": 300 },
+    "sub": { "name": "ひき算", "passScore": 4, "timeLimitSeconds": 300 },
     "word": { "name": "文章題", "passScore": 2, "timeLimitSeconds": 420 }
   },
   "g2": {
