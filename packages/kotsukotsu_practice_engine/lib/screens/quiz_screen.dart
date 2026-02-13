@@ -541,6 +541,21 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
+  void _clearActiveInput() {
+    if (_controllers.isEmpty) return;
+    var target = _activeIndex;
+    for (var i = 0; i < _focusNodes.length; i++) {
+      if (_focusNodes[i].hasFocus) {
+        target = i;
+        break;
+      }
+    }
+    if (target < 0 || target >= _controllers.length) {
+      target = 0;
+    }
+    _controllers[target].clear();
+  }
+
   void _handleKeyPress(String key) {
     if (!_started) return;
     if (_activeIndex < 0 || _activeIndex >= _controllers.length) return;
@@ -550,7 +565,7 @@ class _QuizScreenState extends State<QuizScreen> {
       controller.text = '';
       return;
     }
-    if (key == '竚ｫ') {
+    if (key == '←') {
       if (text.isNotEmpty) {
         controller.text = text.substring(0, text.length - 1);
       }

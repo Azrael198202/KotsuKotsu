@@ -5,7 +5,7 @@ extension _QuizScreenInput on _QuizScreenState {
     return Column(
       children: [
         SegmentedButton<InputMode>(
-          segments: const [
+          segments: [
             ButtonSegment(
               value: InputMode.keypad,
               label: Text('キー入力'),
@@ -15,29 +15,29 @@ extension _QuizScreenInput on _QuizScreenState {
               value: InputMode.handwriting,
               label: Text('手書き'),
               icon: Icon(Icons.draw),
-            ),
-            ButtonSegment(
-              value: InputMode.system,
-              label: Text('端末'),
-              icon: Icon(Icons.keyboard),
+              enabled: _started,
             ),
           ],
-          selected: {_inputMode},
+          selected: {_inputMode == InputMode.system ? InputMode.keypad : _inputMode},
           onSelectionChanged: (value) {
+            if (value.first == InputMode.handwriting && !_started) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('手書きは かいしご に つかえます')),
+              );
+              return;
+            }
             _safeSetState(() {
               _inputMode = value.first;
             });
           },
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         Expanded(
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
-            child: _inputMode == InputMode.keypad
-                ? _buildKeypad()
-                : _inputMode == InputMode.handwriting
-                    ? _buildHandwritingPad()
-                    : _buildSystemKeyboardHint(),
+            child: _inputMode == InputMode.handwriting
+                ? _buildHandwritingPad()
+                : _buildKeypad(),
           ),
         ),
       ],
@@ -47,10 +47,10 @@ extension _QuizScreenInput on _QuizScreenState {
   Widget _buildInputPanelShell() {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      width: _inputPanelCollapsed ? 52 : 280,
+      width: _inputPanelCollapsed ? 52 : 300,
       constraints: _inputPanelCollapsed
           ? const BoxConstraints.tightFor(width: 64, height: 84)
-          : const BoxConstraints.tightFor(width: 280, height: 520),
+          : const BoxConstraints.tightFor(width: 300, height: 560),
       child: _inputPanelCollapsed
           ? _buildCollapsedToggle()
           : Column(
@@ -61,11 +61,11 @@ extension _QuizScreenInput on _QuizScreenState {
                     const SizedBox(width: 4),
                     const Text(
                       '入力',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                     ),
                     const Spacer(),
                     IconButton(
-                      tooltip: '畳む',
+                      tooltip: 'とじる',
                       onPressed: _toggleInputPanel,
                       icon: const Icon(Icons.chevron_right),
                     ),
@@ -79,8 +79,8 @@ extension _QuizScreenInput on _QuizScreenState {
   }
 
   Widget _buildFloatingInputPanel(BoxConstraints constraints) {
-    final panelWidth = _inputPanelCollapsed ? 64.0 : 280.0;
-    final panelHeight = _inputPanelCollapsed ? 84.0 : 520.0;
+    final panelWidth = _inputPanelCollapsed ? 64.0 : 300.0;
+    final panelHeight = _inputPanelCollapsed ? 84.0 : 560.0;
     final double maxX =
         (constraints.maxWidth - panelWidth).clamp(0.0, constraints.maxWidth).toDouble();
     final double maxY =
@@ -100,11 +100,13 @@ extension _QuizScreenInput on _QuizScreenState {
       left: _floatingPanelOffset.dx,
       top: _floatingPanelOffset.dy,
       child: GestureDetector(
-        onPanUpdate: (details) {
-          _safeSetState(() {
-            _floatingPanelOffset += details.delta;
-          });
-        },
+        onPanUpdate: (_inputMode == InputMode.handwriting && !_inputPanelCollapsed)
+            ? null
+            : (details) {
+                _safeSetState(() {
+                  _floatingPanelOffset += details.delta;
+                });
+              },
         child: Material(
           elevation: 6,
           borderRadius: BorderRadius.circular(16),
@@ -137,7 +139,7 @@ extension _QuizScreenInput on _QuizScreenState {
           width: 64,
           height: 64,
           child: IconButton(
-            tooltip: '開く',
+            tooltip: 'ひらく',
             onPressed: _toggleInputPanel,
             icon: const Icon(Icons.pan_tool_alt, color: Color(0xFFF9A825), size: 28),
           ),
@@ -147,73 +149,152 @@ extension _QuizScreenInput on _QuizScreenState {
   }
 
   Widget _buildKeypad() {
-    final keys = [
-      '1',
-      '2',
-      '3',
-      '-',
-      '4',
-      '5',
-      '6',
-      '/',
-      '7',
-      '8',
-      '9',
-      ':',
-      '0',
-      '.',
-      'r',
-      'C',
-      '',
-      '⌫',
-      '',
-      '',
-    ];
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x11000000),
+            color: Color(0x12000000),
             blurRadius: 10,
             offset: Offset(0, 6),
           ),
         ],
       ),
-      child: GridView.builder(
-        itemCount: keys.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.1,
-        ),
-        itemBuilder: (context, index) {
-          final key = keys[index];
-          if (key.isEmpty) {
-            return const SizedBox.shrink();
-          }
-          return ElevatedButton(
-            onPressed: () => _handleKeyPress(key),
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-            ),
-            child: AutoSizeText(
-              key,
-              maxLines: 1,
-              minFontSize: 14,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-            ),
-          );
-        },
+      child: Column(
+        children: [
+          _buildDigitRow(const ['1', '2', '3']),
+          const SizedBox(height: 14),
+          _buildDigitRow(const ['4', '5', '6']),
+          const SizedBox(height: 14),
+          _buildDigitRow(const ['7', '8', '9']),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              const Spacer(),
+              _buildDigitButton('0'),
+              const Spacer(),
+            ],
+          ),
+          const Spacer(),
+          Row(
+            children: [
+              Expanded(
+                child: _buildActionButton(
+                  label: 'けす',
+                  background: const Color(0xFFFFE082),
+                  foreground: const Color(0xFFB86A35),
+                  onTap: _clearActiveInput,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: _buildActionButton(
+                  label: 'OK',
+                  background: const Color(0xFF74C7E8),
+                  foreground: Colors.white,
+                  onTap: _onOkPressed,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
+  Widget _buildDigitRow(List<String> values) {
+    return Row(
+      children: [
+        for (var i = 0; i < values.length; i++) ...[
+          Expanded(child: _buildDigitButton(values[i])),
+          if (i < values.length - 1) const SizedBox(width: 18),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDigitButton(String value) {
+    return SizedBox(
+      height: 54,
+      child: ElevatedButton(
+        onPressed: () => _handleKeyPress(value),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFEFF3E8),
+          foregroundColor: const Color(0xFF708A67),
+          elevation: 1,
+          shadowColor: const Color(0x33000000),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFFD6DEC9)),
+          ),
+        ),
+        child: AutoSizeText(
+          value,
+          maxLines: 1,
+          minFontSize: 16,
+          style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w700),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required String label,
+    required Color background,
+    required Color foreground,
+    required VoidCallback onTap,
+  }) {
+    return SizedBox(
+      height: 52,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: background,
+          foregroundColor: foreground,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: foreground.withValues(alpha: 0.2)),
+          ),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800),
+        ),
+      ),
+    );
+  }
+
+  void _onOkPressed() {
+    if (_activeIndex < 0 || _activeIndex >= _controllers.length) return;
+    final next = _activeIndex + 1;
+    if (next < _controllers.length) {
+      _setActiveIndex(next);
+    } else {
+      _focusNodes[_activeIndex].unfocus();
+    }
+  }
+
   Widget _buildHandwritingPad() {
+    if (!_started) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFDFE7F2)),
+        ),
+        child: const Center(
+          child: Text(
+            '先に「開始」をおしてから 手書きをつかってください',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: Color(0xFF607D8B)),
+          ),
+        ),
+      );
+    }
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -224,42 +305,17 @@ extension _QuizScreenInput on _QuizScreenState {
       child: Column(
         children: [
           const Text(
-            '手書き認識（ローカル）',
+            'てがき メモ',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF7FAFD),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE0E6EF)),
-              ),
-              child: const Center(
-                child: Text('認識エンジン未実装'),
-              ),
-            ),
-          ),
+          const Expanded(child: _ScratchPad()),
           const SizedBox(height: 8),
-          FilledButton(
-            onPressed: null,
-            child: const Text('認識'),
+          const Text(
+            '※ こたえ は した の らんに にゅうりょく してください',
+            style: TextStyle(fontSize: 12, color: Color(0xFF607D8B)),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSystemKeyboardHint() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFDFE7F2)),
-      ),
-      child: const Center(
-        child: Text('端末キーボードで入力してください'),
       ),
     );
   }
