@@ -1,3 +1,6 @@
+﻿import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../config/app_engine_config.dart';
@@ -13,6 +16,7 @@ import 'membership_screen.dart';
 import 'overview_screen.dart';
 import 'payment_screen.dart';
 import 'quiz_screen.dart';
+import 'legal_safety_screen.dart';
 
 class TaskSelectScreen extends StatefulWidget {
   const TaskSelectScreen({super.key});
@@ -31,6 +35,18 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
   Future<_TaskSelectData>? _future;
   Future<MonetizationStatus>? _statusFuture;
   int? _grade;
+  Timer? _freeExpiryTimer;
+  bool _adRequestedOnce = false;
+  bool _hideStatusBanner = false;
+  final ScrollController _listController = ScrollController();
+  bool _didInitialAutoScroll = false;
+
+  @override
+  void dispose() {
+    _freeExpiryTimer?.cancel();
+    _listController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,12 +55,17 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
       _grade = args.grade;
       _future = _loadData(args.grade);
       _statusFuture = MonetizationService.status();
+      _didInitialAutoScroll = false;
+      _hideStatusBanner = false;
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      await AdPopupService.showLocalAdPopup(context);
-    });
+    if (!_adRequestedOnce) {
+      _adRequestedOnce = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await AdPopupService.showLocalAdPopup(context);
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -53,7 +74,7 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
         title: Row(
           children: [
             const Text(
-              'かだい　せんたく',
+              'かだい せんたく',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
             ),
             const SizedBox(width: 12),
@@ -65,7 +86,7 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
                     'assets/bg/title.png',
                     fit: BoxFit.contain,
                     errorBuilder: (_, __, ___) => const Text(
-                      'かだい　せんたく',
+                      'かだい せんたく',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
@@ -93,18 +114,18 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
                 });
               },
               icon: const Icon(Icons.workspace_premium),
-              tooltip: '会員',
+              tooltip: 'メンバー',
             ),
           FutureBuilder<MonetizationStatus>(
             future: _statusFuture,
             builder: (context, snapshot) {
               final purchased = snapshot.data?.purchased ?? false;
-              if (purchased) {
+              if (kReleaseMode && purchased) {
                 return const SizedBox.shrink();
               }
               return _WhiteImageActionButton(
                 icon: Icons.lock_open_rounded,
-                label: '課金',
+                label: purchased ? '課金済み' : '課金',
                 onTap: () async {
                   await Navigator.pushNamed(
                     context,
@@ -120,6 +141,17 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
               );
             },
           ),
+          _WhiteImageActionButton(
+            icon: Icons.shield_outlined,
+            label: 'けんり',
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const LegalSafetyScreen(),
+                ),
+              );
+            },
+          ),
           const SizedBox(width: 8),
         ],
       ),
@@ -131,64 +163,104 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
           }
           final data = snapshot.data;
           if (data == null || data.configs.isEmpty) {
-            return const Center(child: Text('かだいがみつかりません。'));
+            return const Center(child: Text('かだいが みつかりません'));
           }
 
+          final now = DateTime.now();
+          final freeEnd = MonetizationService.launchDate.add(
+            const Duration(days: 7),
+          );
+          final inFreeWeek =
+              !now.isBefore(MonetizationService.launchDate) &&
+              now.isBefore(freeEnd);
+          final liveStatus = MonetizationStatus(
+            purchased: data.monetizationStatus.purchased,
+            inLaunchFreeWeek: inFreeWeek,
+            freeDaysRemaining: inFreeWeek ? freeEnd.difference(now).inDays + 1 : 0,
+          );
+
           var prevPassed = true;
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: data.configs.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final config = data.configs[index];
-              final progress = data.progressByKey[config.taskKey];
+          final autoScrollIndex = _findLastSelectableIndex(
+            configs: data.configs,
+            progressByKey: data.progressByKey,
+            status: liveStatus,
+          );
+          _scheduleInitialAutoScroll(autoScrollIndex);
+          return Column(
+            children: [
+              if (!_hideStatusBanner)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: _FreeCountdownBanner(
+                    status: liveStatus,
+                    freeEnd: freeEnd,
+                    onClose: () {
+                      setState(() {
+                        _hideStatusBanner = true;
+                      });
+                    },
+                  ),
+                ),
+              Expanded(
+                child: ListView.separated(
+                  controller: _listController,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: data.configs.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final config = data.configs[index];
+                    final progress = data.progressByKey[config.taskKey];
 
-              final isFlowEnabled = index == 0 || prevPassed;
-              if (isFlowEnabled) {
-                prevPassed = progress?.isPassed ?? false;
-              }
-              final isLockedByPayment = MonetizationService.isTaskLocked(
-                taskIndex: index,
-                status: data.monetizationStatus,
-              );
+                    final isFlowEnabled = index == 0 || prevPassed;
+                    if (isFlowEnabled) {
+                      prevPassed = progress?.isPassed ?? false;
+                    }
+                    final isLockedByPayment = MonetizationService.isTaskLocked(
+                      taskIndex: index,
+                      status: liveStatus,
+                    );
 
-              return _TaskTypeTile(
-                config: config,
-                progress: progress,
-                enabled: isFlowEnabled,
-                locked: isLockedByPayment,
-                onTap: !isFlowEnabled
-                    ? null
-                    : () async {
-                        if (isLockedByPayment) {
-                          final purchased = await Navigator.pushNamed(
-                            context,
-                            PaymentScreen.routeName,
-                            arguments: PaymentArgs(
-                              grade: config.grade,
-                              taskName: config.taskName,
-                            ),
-                          );
-                          if (!mounted) return;
-                          if (purchased == true) {
-                            setState(() {
-                              _future = _loadData(args.grade);
-                            });
-                          }
-                          return;
-                        }
-                        Navigator.pushNamed(
-                          context,
-                          QuizScreen.routeName,
-                          arguments: TaskArgs(
-                            grade: config.grade,
-                            taskKey: config.taskKey,
-                            taskName: config.taskName,
-                          ),
-                        );
-                      },
-              );
-            },
+                    return _TaskTypeTile(
+                      config: config,
+                      progress: progress,
+                      enabled: isFlowEnabled,
+                      locked: isLockedByPayment,
+                      onTap: !isFlowEnabled
+                          ? null
+                          : () async {
+                              if (isLockedByPayment) {
+                                final purchased = await Navigator.pushNamed(
+                                  context,
+                                  PaymentScreen.routeName,
+                                  arguments: PaymentArgs(
+                                    grade: config.grade,
+                                    taskName: config.taskName,
+                                  ),
+                                );
+                                if (!mounted) return;
+                                if (purchased == true) {
+                                  setState(() {
+                                    _future = _loadData(args.grade);
+                                    _statusFuture = MonetizationService.status();
+                                  });
+                                }
+                                return;
+                              }
+                              Navigator.pushNamed(
+                                context,
+                                QuizScreen.routeName,
+                                arguments: TaskArgs(
+                                  grade: config.grade,
+                                  taskKey: config.taskKey,
+                                  taskName: config.taskName,
+                                ),
+                              );
+                            },
+                    );
+                  },
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -202,11 +274,219 @@ class _TaskSelectScreenState extends State<TaskSelectScreen> {
       configs.map((config) => config.taskKey),
     );
     final monetizationStatus = await MonetizationService.status();
+    _scheduleFreeExpiryRefresh(monetizationStatus);
     return _TaskSelectData(
       configs: configs,
       progressByKey: progressByKey,
       monetizationStatus: monetizationStatus,
     );
+  }
+
+  void _scheduleFreeExpiryRefresh(MonetizationStatus status) {
+    _freeExpiryTimer?.cancel();
+    if (status.purchased || !status.inLaunchFreeWeek) return;
+    final freeEnd = MonetizationService.launchDate.add(const Duration(days: 7));
+    final delay = freeEnd.difference(DateTime.now());
+    if (delay <= Duration.zero) return;
+    _freeExpiryTimer = Timer(delay + const Duration(milliseconds: 200), () {
+      if (!mounted) return;
+      setState(() {});
+    });
+  }
+
+  int _findLastSelectableIndex({
+    required List<AssignmentConfig> configs,
+    required Map<String, TaskProgressEntity> progressByKey,
+    required MonetizationStatus status,
+  }) {
+    var prevPassed = true;
+    var lastSelectable = 0;
+    for (var index = 0; index < configs.length; index++) {
+      final config = configs[index];
+      final progress = progressByKey[config.taskKey];
+      final isFlowEnabled = index == 0 || prevPassed;
+      if (isFlowEnabled) {
+        prevPassed = progress?.isPassed ?? false;
+      }
+      final isLockedByPayment = MonetizationService.isTaskLocked(
+        taskIndex: index,
+        status: status,
+      );
+      if (isFlowEnabled && !isLockedByPayment) {
+        lastSelectable = index;
+      }
+    }
+    return lastSelectable;
+  }
+
+  void _scheduleInitialAutoScroll(int index) {
+    if (_didInitialAutoScroll) return;
+    _didInitialAutoScroll = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_listController.hasClients) return;
+      const itemExtent = 112.0; // tile(100) + separator(12)
+      final target = (index * itemExtent).clamp(
+        0.0,
+        _listController.position.maxScrollExtent,
+      ).toDouble();
+      _listController.jumpTo(target);
+    });
+  }
+
+}
+class _FreeCountdownBanner extends StatefulWidget {
+  const _FreeCountdownBanner({
+    required this.status,
+    required this.freeEnd,
+    required this.onClose,
+  });
+
+  final MonetizationStatus status;
+  final DateTime freeEnd;
+  final VoidCallback onClose;
+
+  @override
+  State<_FreeCountdownBanner> createState() => _FreeCountdownBannerState();
+}
+
+class _FreeCountdownBannerState extends State<_FreeCountdownBanner> {
+  Timer? _ticker;
+  DateTime _now = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _syncTicker();
+  }
+
+  @override
+  void didUpdateWidget(covariant _FreeCountdownBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.status.inLaunchFreeWeek != widget.status.inLaunchFreeWeek ||
+        oldWidget.status.purchased != widget.status.purchased) {
+      _syncTicker();
+    }
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  void _syncTicker() {
+    _ticker?.cancel();
+    if (widget.status.purchased || !widget.status.inLaunchFreeWeek) return;
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {
+        _now = DateTime.now();
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final status = widget.status;
+    final Color bgColor;
+    final IconData icon;
+    final String text;
+    final bool emphasizeDays;
+
+    if (status.purchased) {
+      bgColor = const Color(0xFFDFF4E6);
+      icon = Icons.verified_rounded;
+      emphasizeDays = status.freeDaysRemaining > 0;
+      text = emphasizeDays
+          ? 'ぜんコース りようできます のこり  '
+          : 'ぜんコース りようできます';
+    } else if (status.inLaunchFreeWeek) {
+      final remaining = widget.freeEnd.difference(_now);
+      bgColor = const Color(0xFFE8F3FF);
+      icon = Icons.timer_outlined;
+      text = 'むりょう のこり ${_formatRemaining(remaining)}';
+      emphasizeDays = false;
+    } else {
+      bgColor = const Color(0xFFFFF1E0);
+      icon = Icons.lock_outline_rounded;
+      text = 'たいけん しゅうりょう。まえ 3つ の れんしゅう は むりょう です';
+      emphasizeDays = false;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: const Color(0xFF2A3B4D)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: emphasizeDays
+                ? RichText(
+                    text: TextSpan(
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF2A3B4D),
+                      ),
+                      children: [
+                        TextSpan(text: text),
+                        TextSpan(
+                          text: '${status.freeDaysRemaining}',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF2A3B4D),
+                          ),
+                        ),
+                        const TextSpan(text: '  にち'),
+                      ],
+                    ),
+                  )
+                : Text(
+                    text,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF2A3B4D),
+                    ),
+                  ),
+          ),
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: widget.onClose,
+            borderRadius: BorderRadius.circular(12),
+            child: const Padding(
+              padding: EdgeInsets.all(2),
+              child: Icon(
+                Icons.close_rounded,
+                size: 20,
+                color: Color(0xFFD32F2F),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatRemaining(Duration duration) {
+    final totalSeconds = duration.inSeconds < 0 ? 0 : duration.inSeconds;
+    final days = totalSeconds ~/ 86400;
+    final hours = (totalSeconds % 86400) ~/ 3600;
+    final minutes = (totalSeconds % 3600) ~/ 60;
+    final seconds = totalSeconds % 60;
+    final hh = hours.toString().padLeft(2, '0');
+    final mm = minutes.toString().padLeft(2, '0');
+    final ss = seconds.toString().padLeft(2, '0');
+    if (days > 0) {
+      return '$daysにち $hh:$mm:$ss';
+    }
+    return '$hh:$mm:$ss';
   }
 }
 
@@ -396,22 +676,13 @@ class _TaskTypeTile extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            if (medalAsset != null) ...[
-                              const SizedBox(width: 8),
-                              Image.asset(
-                                medalAsset,
-                                width: 28,
-                                height: 28,
-                                fit: BoxFit.contain,
-                              ),
-                            ],
                           ],
                         ),
                         const SizedBox(height: 6),
                         Text(
                           progress == null
-                              ? 'かいとう　じかん やく ${(config.timeLimitSeconds / 60).ceil()} ふん'
-                              : 'せいせき ${progress!.scoreLabel} / じげん ${config.timeLimitSeconds}s',
+                              ? 'かいとう じかん やく ${(config.timeLimitSeconds / 60).ceil()} ふん'
+                              : 'せいせき ${progress!.scoreLabel} / じかん ${config.timeLimitSeconds}s',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -423,12 +694,23 @@ class _TaskTypeTile extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (medalAsset != null) ...[
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      width: 84,
+                      height: 84,
+                      child: Image.asset(
+                        medalAsset,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ],
                   const SizedBox(width: 10),
                   if (locked)
                     const _LockBadge()
                   else
                     _StartActionButton(
-                      label: progress == null ? 'はじまる' : 'ふくしゅう',
+                      label: progress == null ? 'はじめる' : 'ふくしゅう',
                       enabled: enabled,
                       onTap: onTap,
                     ),
@@ -529,7 +811,7 @@ class _LockBadge extends StatelessWidget {
           Icon(Icons.lock, color: Color(0xFFB17E00), size: 16),
           SizedBox(width: 4),
           Text(
-            '解鎖',
+            'ロック中',
             style: TextStyle(
               color: Color(0xFFB17E00),
               fontWeight: FontWeight.w700,
@@ -540,3 +822,4 @@ class _LockBadge extends StatelessWidget {
     );
   }
 }
+

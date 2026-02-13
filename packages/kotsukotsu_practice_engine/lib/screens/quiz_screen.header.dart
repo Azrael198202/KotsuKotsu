@@ -32,7 +32,7 @@ extension _QuizScreenHeader on _QuizScreenState {
           if (!_inQuestionPhase)
             FilledButton(
               onPressed: _goToHomework,
-              child: const Text('宿題へ'),
+              child: const Text('はじめましょう'),
             )
           else if (!_started)
             _RoundActionButton(

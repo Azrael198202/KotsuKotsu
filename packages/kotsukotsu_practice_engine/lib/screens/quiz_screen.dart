@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
@@ -80,9 +80,9 @@ class _QuizScreenState extends State<QuizScreen> {
       canPop: !_started,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('提出後に戻ることができます')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('かいとう ちゅうは もどれません')));
       },
       child: Scaffold(
         body: FutureBuilder<_QuizData>(
@@ -97,7 +97,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('問題が見つかりません'),
+                    const Text('もんだいが みつかりません'),
                     const SizedBox(height: 8),
                     Text('grade=${args.grade}, taskKey=${args.taskKey}'),
                   ],
@@ -114,7 +114,8 @@ class _QuizScreenState extends State<QuizScreen> {
                       ? LayoutBuilder(
                           builder: (context, constraints) {
                             final isPortrait =
-                                MediaQuery.of(context).orientation == Orientation.portrait;
+                                MediaQuery.of(context).orientation ==
+                                Orientation.portrait;
                             if (!isPortrait) {
                               return Row(
                                 children: [
@@ -127,8 +128,12 @@ class _QuizScreenState extends State<QuizScreen> {
                                         padding: const EdgeInsets.all(16),
                                         itemCount: data.questions.length,
                                         itemBuilder: (context, index) {
-                                          final question = data.questions[index];
-                                          return _buildQuestionTile(question, index);
+                                          final question =
+                                              data.questions[index];
+                                          return _buildQuestionTile(
+                                            question,
+                                            index,
+                                          );
                                         },
                                       ),
                                     ),
@@ -150,7 +155,10 @@ class _QuizScreenState extends State<QuizScreen> {
                                     itemCount: data.questions.length,
                                     itemBuilder: (context, index) {
                                       final question = data.questions[index];
-                                      return _buildQuestionTile(question, index);
+                                      return _buildQuestionTile(
+                                        question,
+                                        index,
+                                      );
                                     },
                                   ),
                                 ),
@@ -185,9 +193,10 @@ class _QuizScreenState extends State<QuizScreen> {
         remainder: _normalizeIntInput(commaMatch.group(2) ?? ''),
       );
     }
-    final rMatch = RegExp(r'^\s*(-?\d+)\s*(?:r\s*(-?\d+))?\s*$',
-            caseSensitive: false)
-        .firstMatch(expected);
+    final rMatch = RegExp(
+      r'^\s*(-?\d+)\s*(?:r\s*(-?\d+))?\s*$',
+      caseSensitive: false,
+    ).firstMatch(expected);
     if (rMatch != null) {
       return _DivideParts(
         quotient: _normalizeIntInput(rMatch.group(1) ?? ''),
@@ -206,7 +215,9 @@ class _QuizScreenState extends State<QuizScreen> {
     return TextField(
       controller: _controllers[controllerIndex],
       focusNode: _focusNodes[controllerIndex],
-      keyboardType: _inputMode == InputMode.system ? keyboardType : TextInputType.none,
+      keyboardType: _inputMode == InputMode.system
+          ? keyboardType
+          : TextInputType.none,
       readOnly: !enabled || _inputMode != InputMode.system,
       showCursor: enabled,
       onTap: enabled ? () => _setActiveIndex(controllerIndex) : null,
@@ -287,11 +298,12 @@ class _QuizScreenState extends State<QuizScreen> {
     final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
     final assets = manifest.listAssets();
     final basePrefix = 'assets/explanations/g${args.grade}/';
-    final candidates = assets
-        .where((path) => path.startsWith(basePrefix))
-        .where((path) => path.toLowerCase().endsWith('.pdf'))
-        .toList()
-      ..sort();
+    final candidates =
+        assets
+            .where((path) => path.startsWith(basePrefix))
+            .where((path) => path.toLowerCase().endsWith('.pdf'))
+            .toList()
+          ..sort();
     if (candidates.isEmpty) return null;
 
     final exact = '$basePrefix${args.taskKey}.pdf';
@@ -302,8 +314,7 @@ class _QuizScreenState extends State<QuizScreen> {
       return fileName.startsWith(args.taskKey.toLowerCase());
     }).toList();
     if (prefixMatch.isNotEmpty) return prefixMatch.first;
-
-    return candidates.first;
+    return null;
   }
 
   Widget _buildExplanationView(_QuizData data) {
@@ -313,8 +324,9 @@ class _QuizScreenState extends State<QuizScreen> {
         child: Padding(
           padding: EdgeInsets.all(24),
           child: Text(
-            '暂无讲解 PDF。请将讲解文件放到 assets/explanations/g{grade}/，并命名为 taskKey.pdf。',
+            'このコースは せつめい がありません',
             textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
           ),
         ),
       );
@@ -324,8 +336,9 @@ class _QuizScreenState extends State<QuizScreen> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            '讲解 PDF 加载失败:\n$_pdfLoadError\n\n资源路径: $asset',
+            'せつめいを ひらけませんでした\\n\\n$_pdfLoadError',
             textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
           ),
         ),
       );
@@ -350,7 +363,8 @@ class _QuizScreenState extends State<QuizScreen> {
       return total + 1;
     });
     final needsRebuild =
-        _questionFields.length != questions.length || _controllers.length != expectedFieldCount;
+        _questionFields.length != questions.length ||
+        _controllers.length != expectedFieldCount;
     if (!needsRebuild) return;
 
     for (final controller in _controllers) {
@@ -364,7 +378,9 @@ class _QuizScreenState extends State<QuizScreen> {
     var fieldIndex = 0;
     for (final question in questions) {
       if (question.type == QuestionType.divide) {
-        _questionFields.add(_AnswerFieldBinding(indices: [fieldIndex, fieldIndex + 1]));
+        _questionFields.add(
+          _AnswerFieldBinding(indices: [fieldIndex, fieldIndex + 1]),
+        );
         fieldIndex += 2;
         continue;
       }
@@ -421,7 +437,8 @@ class _QuizScreenState extends State<QuizScreen> {
         final expectedNormalized = expectedSteps
             .map((value) => _normalizeIntInput(value))
             .toList();
-        final isCorrect = expectedNormalized.isNotEmpty &&
+        final isCorrect =
+            expectedNormalized.isNotEmpty &&
             inputs.length == expectedNormalized.length &&
             _listsEqual(inputs, expectedNormalized);
         if (isCorrect) {
@@ -436,18 +453,21 @@ class _QuizScreenState extends State<QuizScreen> {
           ),
         );
       } else if (question.type == QuestionType.divide) {
-        final quotientInputRaw = _controllers[binding.quotientIndex].text.trim();
+        final quotientInputRaw = _controllers[binding.quotientIndex].text
+            .trim();
         final remainderIndex = binding.remainderIndex ?? binding.quotientIndex;
         final remainderInputRaw = _controllers[remainderIndex].text.trim();
         final normalizedQuotientInput = _normalizeIntInput(quotientInputRaw);
-        final normalizedRemainderInput =
-            _normalizeIntInput(remainderInputRaw.isEmpty ? '0' : remainderInputRaw);
+        final normalizedRemainderInput = _normalizeIntInput(
+          remainderInputRaw.isEmpty ? '0' : remainderInputRaw,
+        );
         var isCorrect = false;
         var expectedForReview = expected ?? '';
         if (expected != null && expected.isNotEmpty) {
           final parts = _parseDivideAnswer(expected);
           if (parts != null) {
-            isCorrect = normalizedQuotientInput == parts.quotient &&
+            isCorrect =
+                normalizedQuotientInput == parts.quotient &&
                 normalizedRemainderInput == parts.remainder;
             expectedForReview = '${parts.quotient},${parts.remainder}';
           } else {
@@ -458,10 +478,11 @@ class _QuizScreenState extends State<QuizScreen> {
           correct++;
         }
         final hasInput =
-            normalizedQuotientInput.isNotEmpty || normalizedRemainderInput.isNotEmpty;
+            normalizedQuotientInput.isNotEmpty ||
+            normalizedRemainderInput.isNotEmpty;
         final inputForReview = hasInput
             ? '${normalizedQuotientInput.isEmpty ? '0' : normalizedQuotientInput},'
-                '${normalizedRemainderInput.isEmpty ? '0' : normalizedRemainderInput}'
+                  '${normalizedRemainderInput.isEmpty ? '0' : normalizedRemainderInput}'
             : '';
         reviews.add(
           ReviewItem(
@@ -486,10 +507,12 @@ class _QuizScreenState extends State<QuizScreen> {
         );
       }
     }
-    final effectivePassScore =
-        data.config.passScore <= 0 ? data.questions.length : data.config.passScore;
-    final cappedPassScore =
-        effectivePassScore > data.questions.length ? data.questions.length : effectivePassScore;
+    final effectivePassScore = data.config.passScore <= 0
+        ? data.questions.length
+        : data.config.passScore;
+    final cappedPassScore = effectivePassScore > data.questions.length
+        ? data.questions.length
+        : effectivePassScore;
     final result = ResultArgs(
       grade: args.grade,
       taskKey: args.taskKey,
@@ -527,7 +550,7 @@ class _QuizScreenState extends State<QuizScreen> {
       controller.text = '';
       return;
     }
-    if (key == '⌫') {
+    if (key == '竚ｫ') {
       if (text.isNotEmpty) {
         controller.text = text.substring(0, text.length - 1);
       }
@@ -572,7 +595,11 @@ class _QuizScreenState extends State<QuizScreen> {
     if (expected == null) return const [];
     final trimmed = expected.trim();
     if (trimmed.isEmpty) return const [];
-    return trimmed.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    return trimmed
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
   }
 
   bool _listsEqual(List<String> a, List<String> b) {

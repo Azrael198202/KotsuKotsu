@@ -31,6 +31,11 @@ class MonetizationService {
     await prefs.setBool(_purchaseKey, true);
   }
 
+  static Future<void> resetPurchaseUnlockAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_purchaseKey, false);
+  }
+
   static Future<MonetizationStatus> status() async {
     final purchased = await isPurchased();
     final now = DateTime.now();
