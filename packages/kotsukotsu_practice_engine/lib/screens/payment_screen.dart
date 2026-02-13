@@ -29,17 +29,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final grade = paymentArgs.grade;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('課金/会員')),
+      appBar: AppBar(title: const Text('コツコツについて課金説明')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '$grade年生 ${paymentArgs.taskName ?? ''}',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
             Text(
               _purchased
                   ? '購入済み: すべての課題が解放されています'

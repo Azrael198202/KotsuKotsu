@@ -295,17 +295,36 @@ class _TaskTypeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgGradient = enabled
-        ? const LinearGradient(
-            colors: [Color(0xFF76C95F), Color(0xFF59B64E)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          )
-        : const LinearGradient(
-            colors: [Color(0xFFC4CAD3), Color(0xFFA9B0BC)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    final isTestTask = config.isTestTask;
+    final medalAsset = progress == null
+        ? null
+        : config.medalAssetFor(
+            score: progress!.correct,
+            isPassed: progress!.isPassed,
           );
+    final bgGradient = isTestTask
+        ? (enabled
+              ? const LinearGradient(
+                  colors: [Color(0xFF9E6BFF), Color(0xFF7E4DDE)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : const LinearGradient(
+                  colors: [Color(0xFFB7A2E3), Color(0xFF9C8AC8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ))
+        : (enabled
+              ? const LinearGradient(
+                  colors: [Color(0xFF76C95F), Color(0xFF59B64E)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : const LinearGradient(
+                  colors: [Color(0xFFC4CAD3), Color(0xFFA9B0BC)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ));
 
     return InkWell(
       onTap: onTap,
@@ -348,8 +367,10 @@ class _TaskTypeTile extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
-                      Icons.menu_book_rounded,
+                    child: Icon(
+                      isTestTask
+                          ? Icons.assignment_turned_in_rounded
+                          : Icons.menu_book_rounded,
                       size: 34,
                       color: Colors.white,
                     ),
@@ -360,16 +381,31 @@ class _TaskTypeTile extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          config.taskName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 27,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            height: 1,
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                config.taskName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 27,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  height: 1,
+                                ),
+                              ),
+                            ),
+                            if (medalAsset != null) ...[
+                              const SizedBox(width: 8),
+                              Image.asset(
+                                medalAsset,
+                                width: 28,
+                                height: 28,
+                                fit: BoxFit.contain,
+                              ),
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 6),
                         Text(

@@ -1,7 +1,9 @@
 {
   "g1": {
     "add_sub": { "name": "たし算・ひき算", "passScore": 4, "timeLimitSeconds": 300 },
-    "word": { "name": "文章題", "passScore": 2, "timeLimitSeconds": 420 }
+    "word": { "name": "文章題", "passScore": 2, "timeLimitSeconds": 420 },
+    "test_1": { "name": "段階テスト1", "passScore": 6, "timeLimitSeconds": 600, "firstTierScore": 10, "secondTierScore": 8, "thirdTierScore": 6 },
+    "test_2": { "name": "段階テスト2", "passScore": 8, "timeLimitSeconds": 720, "firstTierScore": 12, "secondTierScore": 10, "thirdTierScore": 8 }
   },
   "g2": {
     "add_sub": { "name": "たし算・ひき算（くり上がり/くり下がり）", "passScore": 8, "timeLimitSeconds": 420 },

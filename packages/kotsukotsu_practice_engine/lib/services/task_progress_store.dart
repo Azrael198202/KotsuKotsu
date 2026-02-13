@@ -8,6 +8,11 @@ class TaskProgressStore {
   static Future<void> recordResult(ResultArgs args) async {
     final isar = await IsarService.getInstance();
     final id = _progressId(args.grade, args.taskKey);
+    final existing = await isar.taskProgressEntitys.get(id);
+    final isTestTask = args.taskKey.toLowerCase().contains('test');
+    if (isTestTask && existing != null && !_shouldReplaceTestProgress(existing, args)) {
+      return;
+    }
     final entity = TaskProgressEntity()
       ..id = id
       ..grade = args.grade
@@ -21,6 +26,17 @@ class TaskProgressStore {
     await isar.writeTxn(() async {
       await isar.taskProgressEntitys.put(entity);
     });
+  }
+
+  static bool _shouldReplaceTestProgress(TaskProgressEntity existing, ResultArgs next) {
+    final nextPassed = next.isPassed;
+    final existingPassed = existing.isPassed;
+    if (nextPassed && !existingPassed) return true;
+    if (next.correct > existing.correct) return true;
+    if (next.correct == existing.correct && next.durationSeconds < existing.durationSeconds) {
+      return true;
+    }
+    return false;
   }
 
   static Future<Map<String, TaskProgressEntity>> getProgressForGrade(
